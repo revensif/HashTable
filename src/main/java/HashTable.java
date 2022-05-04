@@ -1,5 +1,3 @@
-import java.util.Hashtable;
-
 public class HashTable {
     private static final int default_capacity = 10;
     int size;
