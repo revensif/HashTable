@@ -111,19 +111,20 @@ public class HashTable {
 
     public static void main(String[] args) {
         HashTable ht = new HashTable(50);
-        ht.put("Putin", "Победил");
-        ht.put("Pizza", 12);
-        ht.put("Pizza", 11);
-        Item item1 = new Item("Putin", "NumberOne");
-        Item item2 = new Item("Russia", "Strong");
-        Item[] items = new Item[]{item1, item2};
+        System.out.println(ht);
+        Item item1 = new Item("Test1", "1");
+        Item item2 = new Item("Test2", 2);
+        Item item3 = new Item("Test3", "три");
+        Item[] items = new Item[]{item1, item2, item3};
         ht.putAll(items);
         System.out.println(ht);
-        ht.remove("BAnan");
+        Item test1 = ht.remove("Test3");
         ht.remove("123");
+        System.out.println(ht);
+        ht.put("Test3", 4);
         System.out.println(ht);
         ht.clear();
         System.out.println(ht);
-        System.out.println(ht.size);
+        System.out.println(test1);
     }
 }
