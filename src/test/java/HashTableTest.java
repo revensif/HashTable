@@ -1,85 +1,137 @@
 import junit.framework.TestCase;
+import org.junit.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.util.*;
 
 public class HashTableTest extends TestCase {
-    HashTable ht = new HashTable();
+    HashTable<String, Integer> ht = new HashTable<>(1);
 
-    public void testPut() {
-        ht.put("test1", 1);
-        ht.put("test2", 1);
-        assertEquals(ht.getSize(), 2);
-        assertEquals(ht.get("test1"), 1);
-        assertEquals(ht.get("test2"), 1);
-        ht.put("test1", 2);
-        assertEquals(ht.getSize(), 2);
-        assertEquals(ht.get("test1"), 2);
-        assertEquals(ht.get("test2"), 1);
-        ht.put("test3", "test");
-        assertEquals(ht.get("test3"), "test");
-        assertEquals(ht.getSize(), 3);
+    private static void fillTable(Map<String, Integer> map) {
+        map.clear();
+        map.put("test1", 10);
+        map.put("test2", 20);
+        map.put("test3", 30);
+        map.put("test4", 40);
+        map.put("test5", 50);
+
     }
 
-    public void testPutAll() {
-        Item item1 = new Item("test1", 10);
-        Item item2 = new Item("test2", 15);
-        Item item3 = new Item("test3", 1);
-        Item item4 = new Item("test1", 29);
-        Item[] items1 = new Item[]{item1, item2, item3};
-        Item[] items2 = new Item[]{item1, item2, item3, item4};
-        ht.putAll(items1);
-        assertEquals(ht.getSize(), 3);
-        assertEquals(ht.get("test1"), 10);
-        ht.clear();
-        ht.putAll(items2);
-        assertEquals(ht.getSize(), 3);
-        assertEquals(ht.get("test1"), 29);
+    public void testSize() {
+        assertEquals(0, ht.size());
+        fillTable(ht);
+        assertEquals(5, ht.size());
+        ht.put("test3", 10);
+        assertEquals(5, ht.size());
+        ht.put("test6", 17);
+        ht.put("test7", 123);
+        assertEquals(7, ht.size());
+    }
+
+    public void testIsEmpty() {
+        assertTrue(ht.isEmpty());
+        fillTable(ht);
+        assertFalse(ht.isEmpty());
+    }
+
+    public void testContainsKey() {
+        fillTable(ht);
+        assertTrue(ht.containsKey("test1"));
+        assertFalse(ht.containsKey("test6"));
+        assertThrows(NullPointerException.class, () -> ht.containsKey(null));
+    }
+
+    public void testContainsValue() {
+        fillTable(ht);
+        assertTrue(ht.containsValue(10));
+        assertFalse(ht.containsValue(60));
+        assertThrows(NullPointerException.class, () -> ht.containsValue(null));
     }
 
     public void testGet() {
-        Item item1 = new Item("test1", 10);
-        Item item2 = new Item("test2", 15);
-        Item item3 = new Item("test3", 1);
-        Item item4 = new Item("test1", 29);
-        Item[] items1 = new Item[]{item1, item2, item3};
-        Item[] items2 = new Item[]{item1, item2, item3, item4};
-        ht.putAll(items1);
-        assertEquals(ht.get("test1"), 10);
-        assertEquals(ht.get("test2"), 15);
-        assertEquals(ht.get("test3"), 1);
-        ht.clear();
-        ht.putAll(items2);
-        assertEquals(ht.get("test1"), 29);
-        assertEquals(ht.get("test2"), 15);
-        assertEquals(ht.get("test3"), 1);
+        fillTable(ht);
+        assertEquals(10, (int) ht.get("test1"));
+        assertNull(ht.get("test6"));
+
+    }
+
+    public void testPut() {
+        assertEquals(ht.size(), 0);
+        fillTable(ht);
+        assertEquals(ht.size(), 5);
+        assertEquals((Object) 10, ht.put("test1", 60));
+        assertTrue(ht.containsValue(60));
+        assertNull(ht.put("test6", 60));
+        assertTrue(ht.containsKey("test6"));
+        assertEquals(ht.size(), 6);
+        assertThrows(NullPointerException.class, () -> ht.put(null, 1));
+        assertThrows(NullPointerException.class, () -> ht.put("test7", null));
+        assertThrows(NullPointerException.class, () -> ht.put(null, null));
     }
 
     public void testRemove() {
-        Item item1 = new Item("test1", 12);
-        Item item2 = new Item("test2", 15);
-        Item item3 = new Item("test3", 19);
-        Item[] items = new Item[]{item1, item2, item3};
-        ht.putAll(items);
-        assertEquals(ht.getSize(), 3);
-        ht.remove("test1");
-        assertEquals(ht.getSize(), 2);
-        assertNull(ht.remove("test4"));
-        ht.remove("test2");
-        assertEquals(ht.getSize(), 1);
+        fillTable(ht);
+        assertEquals(5, ht.size());
+        assertEquals(40, (int) ht.get("test4"));
+        ht.remove("test4");
+        assertEquals(4, ht.size());
+        assertNull(ht.get("test4"));
+        ht.remove("test2222");
+        assertEquals(4, ht.size());
+        assertThrows(NullPointerException.class, () -> ht.remove(null));
+    }
+
+    public void testPutAll() {
+        Map<String, Integer> map = new HashMap<>();
+        fillTable(map);
+        ht.putAll(map);
+        assertEquals(5, map.size());
+        assertEquals(10, (int) map.get("test1"));
+        assertNull(ht.get("test6"));
+        assertThrows(NullPointerException.class, () -> ht.putAll(null));
     }
 
     public void testClear() {
-        Item item1 = new Item("test1", 10);
-        Item item2 = new Item("test2", 15);
-        Item item3 = new Item("test3", 117);
-        Item item4 = new Item("test4", 11);
-        Item[] items1 = new Item[]{item1, item2, item3};
-        Item[] items2 = new Item[]{item1, item2, item3, item4};
-        ht.putAll(items1);
-        assertEquals(ht.getSize(), 3);
+        fillTable(ht);
+        assertEquals(5, ht.size());
         ht.clear();
-        assertEquals(ht.getSize(), 0);
-        ht.putAll(items2);
-        assertEquals(ht.getSize(), 4);
-        ht.clear();
-        assertEquals(ht.getSize(), 0);
+        assertEquals(0, ht.size());
+    }
+
+    public void testKeySet() {
+        Hashtable<String, Integer> expected = new Hashtable<>();
+        for (int i = 1; i < 4; i++) {
+            ht.put("test" + i, 42 * i);
+            expected.put("test" + i, 42 * i);
+        }
+        ht.put("test4", 20);
+        expected.put("test4", 20);
+        assertEquals(expected.keySet(), ht.keySet());
+    }
+
+    public void testValues() {
+        Map<String, Integer> map = new HashMap<>();
+        fillTable(ht);
+        fillTable(map);
+        List<Integer> mapList = new ArrayList<>(map.values());
+        List<Integer> htList = new ArrayList<>(ht.values());
+        Collections.sort(mapList);
+        Collections.sort(htList);
+        assertEquals(mapList, htList);
+        ht.remove("test1");
+        htList = new ArrayList<>(ht.values());
+        assertNotSame(mapList, htList);
+    }
+
+    public void testEntrySet() {
+        Hashtable<String, Integer> expected = new Hashtable<>();
+        for (int i = 1; i < 4; i++) {
+            ht.put("test" + i, 14 * i);
+            expected.put("test" + i, 14 * i);
+        }
+        ht.put("test4", 20);
+        expected.put("test4", 20);
+        assertEquals(expected.entrySet(), ht.entrySet());
     }
 }
