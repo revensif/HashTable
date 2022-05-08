@@ -6,7 +6,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import java.util.*;
 
 public class HashTableTest extends TestCase {
-    HashTable<String, Integer> ht = new HashTable<>(1);
+    HashTable<String, Integer> ht = new HashTable<>();
 
     private static void fillTable(Map<String, Integer> map) {
         map.clear();
@@ -133,5 +133,71 @@ public class HashTableTest extends TestCase {
         ht.put("test4", 20);
         expected.put("test4", 20);
         assertEquals(expected.entrySet(), ht.entrySet());
+    }
+
+    public void testGetOrDefault() {
+        fillTable(ht);
+        assertEquals( 10, (int)ht.getOrDefault("test1", 20));
+        assertEquals(40, (int) ht.getOrDefault("test6", 40));
+    }
+
+    public void testForEach() {
+        HashTable<String, Integer> expected = new HashTable<>();
+        for (int i = 1; i < 4; i++) {
+            ht.put(String.valueOf(i), i);
+            expected.put(String.valueOf(i), i + 1);
+        }
+        ht.forEach((key, value) -> {
+            value += 1;
+            ht.replace(key, value - 1, value);
+        });
+        System.out.println(ht);
+        assertEquals(expected, ht);
+    }
+
+    public void testReplaceAll() {
+        HashTable<Integer, Integer> test = new HashTable<>();
+        test.put(10, 2);
+        test.put(20, 3);
+        test.put(30, 4);
+        test.replaceAll((k, v) -> v * k);
+        List<Integer> tableToList = new ArrayList<>(test.values());
+        Collections.sort(tableToList);
+        List<Integer> testList = new ArrayList<>();
+        testList.add(20);
+        testList.add(60);
+        testList.add(120);
+        assertEquals(tableToList, testList);
+        assertThrows(NullPointerException.class, () -> test.forEach(null));
+    }
+
+    public void testPutIfAbsent() {
+        fillTable(ht);
+        assertEquals(10, (int) ht.putIfAbsent("test1", 1));
+        assertEquals(60, (int) ht.putIfAbsent("test6", 60));
+        assertThrows(NullPointerException.class, () -> ht.putIfAbsent(null, 10));
+        assertThrows(NullPointerException.class, () -> ht.putIfAbsent("test11", null));
+        assertThrows(NullPointerException.class, () -> ht.putIfAbsent(null, null));
+    }
+
+    public void testTestRemove() {
+    }
+
+    public void testReplace() {
+    }
+
+    public void testTestReplace() {
+    }
+
+    public void testComputeIfAbsent() {
+    }
+
+    public void testComputeIfPresent() {
+    }
+
+    public void testCompute() {
+    }
+
+    public void testMerge() {
     }
 }

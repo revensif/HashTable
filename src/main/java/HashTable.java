@@ -1,4 +1,7 @@
 import java.util.*;
+import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 
 public class HashTable<K, V> implements Map<K, V> {
     private final int CONST = 17;
@@ -66,13 +69,18 @@ public class HashTable<K, V> implements Map<K, V> {
     @Override
     public boolean containsKey(Object key) {
         if (key == null) throw new NullPointerException("Ключ не может быть null");
-        return keySet().contains(key);
+        return get(key) != null;
     }
 
     @Override
     public boolean containsValue(Object value) {
         if (value == null) throw new NullPointerException("Значение не может быть null");
-        return values().contains(value);
+        for (Map.Entry<K, V> item : entrySet()) {
+            if (item.getValue().equals(value)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
@@ -162,31 +170,278 @@ public class HashTable<K, V> implements Map<K, V> {
 
     @Override
     public Set<K> keySet() {
-        Set<K> keys = new HashSet<>();
-        for (Map.Entry<K, V> item : entrySet()) {
-            keys.add(item.getKey());
+        if (keySet == null) {
+            keySet = new KeySet();
         }
-        return keys;
+        return keySet;
     }
 
     @Override
     public Collection<V> values() {
-        Set<V> values = new HashSet<>();
-        for (Map.Entry<K, V> item : entrySet()) {
-            values.add(item.getValue());
+        if (values == null) {
+            values = new ValueCollection();
         }
         return values;
     }
 
     @Override
-    public Set<Entry<K, V>> entrySet() {
-        Set<Map.Entry<K, V>> result = new HashSet<>();
-        for (Item<K, V> item : data) {
-            if (item != null) {
-                result.add(new Item<>(item.getKey(), item.getValue()));
+    public Set<Map.Entry<K, V>> entrySet() {
+        if (entrySet == null) {
+            entrySet = new EntrySet();
+        }
+        return entrySet;
+    }
+
+    @Override
+    public V getOrDefault(Object key, V defaultValue) {
+        if (key == null) throw new NullPointerException("Ключ не может быть null");
+        if (keySet().contains(key)) return get(key);
+        return defaultValue;
+    }
+
+    @Override
+    public void forEach(BiConsumer<? super K, ? super V> action) {
+        Objects.requireNonNull(action);
+        if (entrySet == null) {
+            entrySet = entrySet();
+        }
+        int size = entrySet.size();
+        for (Entry<K, V> item : entrySet) {
+            action.accept(item.getKey(), item.getValue());
+            if (entrySet.size() != size) {
+                throw new ConcurrentModificationException();
             }
         }
-        return result;
+    }
+
+    private Set<K> keySet;
+    private Set<Map.Entry<K, V>> entrySet;
+    private Collection<V> values;
+
+    // Types of Enumerations/Iterations
+    private static final int KEYS = 0;
+    private static final int VALUES = 1;
+    private static final int ENTRIES = 2;
+
+    private class KeySet extends AbstractSet<K> {
+        public Iterator<K> iterator() {
+            return getIterator(KEYS);
+        }
+
+        public int size() {
+            return size;
+        }
+
+        public boolean contains(Object o) {
+            return containsKey(o);
+        }
+
+        public boolean remove(Object o) {
+            return HashTable.this.remove(o) != null;
+        }
+
+        public void clear() {
+            HashTable.this.clear();
+        }
+    }
+
+    private class ValueCollection extends AbstractCollection<V> {
+        public Iterator<V> iterator() {
+            return getIterator(VALUES);
+        }
+
+        public int size() {
+            return size;
+        }
+
+        public boolean contains(Object o) {
+            return containsValue(o);
+        }
+
+        public void clear() {
+            HashTable.this.clear();
+        }
+    }
+
+    private class EntrySet extends AbstractSet<Map.Entry<K, V>> {
+        public Iterator<Map.Entry<K, V>> iterator() {
+            return getIterator(ENTRIES);
+        }
+
+        public boolean add(Map.Entry<K, V> o) {
+            return super.add(o);
+        }
+
+        public boolean contains(Object o) {
+            if (!(o instanceof Item)) {
+                return false;
+            }
+            Map.Entry<?, ?> entry = (Map.Entry<?, ?>) o;
+            Object key = entry.getKey();
+            return HashTable.this.containsKey(key);
+        }
+
+        public boolean remove(Object o) {
+            if (!(o instanceof Entry<?, ?> entry)) {
+                return false;
+            }
+            Object key = entry.getKey();
+            return HashTable.this.remove(key) != null;
+        }
+
+        public int size() {
+            return size;
+        }
+
+        public void clear() {
+            HashTable.this.clear();
+        }
+    }
+
+    private <T> Iterator<T> getIterator(int type) {
+        if (size == 0) {
+            return Collections.emptyIterator();
+        } else {
+            return new HashTableIterator<>(type);
+        }
+    }
+
+    private class HashTableIterator<T> implements Iterator<T> {
+        int index = -1;
+        int count = 0;
+        int iterSize = size;
+        int type;
+
+        HashTableIterator(int type) {
+            this.type = type;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return count < iterSize;
+        }
+
+        @Override
+        public T next() {
+            index++;
+            while (index < capacity) {
+                Item<K, V> item = data[index];
+                if (item != null) {
+                    count++;
+                    return type == KEYS ? (T) item.getKey() : (type == VALUES ? (T) item.getValue() : (T) item);
+                } else {
+                    index++;
+                }
+            }
+            return null;
+        }
+    }
+
+    @Override
+    public void replaceAll(BiFunction<? super K, ? super V, ? extends V> function) {
+        Objects.requireNonNull(function);
+        if (entrySet == null) {
+            entrySet = entrySet();
+        }
+        int size = entrySet.size();
+        for (Entry<K, V> item : entrySet) {
+            Objects.requireNonNull(
+                    item.setValue(function.apply(item.getKey(), item.getValue()))
+            );
+            if (entrySet.size() != size) {
+                throw new ConcurrentModificationException();
+            }
+        }
+    }
+
+    @Override
+    public V putIfAbsent(K key, V value) {
+        if (key == null || value == null) throw new NullPointerException("Ключ или значение не могут быть null");
+        if (containsKey(key)) return get(key);
+        put(key, value);
+        return value;
+    }
+
+    @Override
+    public boolean remove(Object key, Object value) {
+        return Map.super.remove(key, value);
+    }
+
+    @Override
+    public boolean replace(K key, V oldValue, V newValue) {
+        if (newValue == null || oldValue == null || key == null)
+            throw new NullPointerException("Значение не может быть null");
+        if (!keySet().contains(key)) return false;
+        for (Entry<K, V> item : entrySet) {
+            if (item.getKey() == key && item.getValue() == oldValue) {
+                item.setValue(newValue);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public V replace(K key, V value) {
+        return Map.super.replace(key, value);
+    }
+
+    @Override
+    public V computeIfAbsent(K key, Function<? super K, ? extends V> mappingFunction) {
+        return Map.super.computeIfAbsent(key, mappingFunction);
+    }
+
+    @Override
+    public V computeIfPresent(K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+        return Map.super.computeIfPresent(key, remappingFunction);
+    }
+
+    @Override
+    public V compute(K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+        return Map.super.compute(key, remappingFunction);
+    }
+
+    @Override
+    public V merge(K key, V value, BiFunction<? super V, ? super V, ? extends V> remappingFunction) {
+        return Map.super.merge(key, value, remappingFunction);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == this) {
+            return true;
+        }
+        if (!(o instanceof Map<?, ?> t)) {
+            return false;
+        }
+        if (t.size() != size())
+            return false;
+        try {
+            for (Map.Entry<K, V> e : entrySet()) {
+                K key = e.getKey();
+                V value = e.getValue();
+                if (!value.equals(t.get(key))) {
+                    return false;
+                }
+            }
+        } catch (ClassCastException | NullPointerException ex) {
+            return false;
+        }
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 0;
+        for (Entry<K, V> entry : entrySet) {
+            hash += entry.hashCode();
+        }
+        return hash;
+    }
+
+    @Override
+    public String toString() {
+        return Arrays.toString(data);
     }
 
     public static class Item<K, V> implements Map.Entry<K, V> {
@@ -231,7 +486,7 @@ public class HashTable<K, V> implements Map<K, V> {
 
         @Override
         public String toString() {
-            return key + "= " + value;
+            return key + " = " + value;
         }
     }
 }
