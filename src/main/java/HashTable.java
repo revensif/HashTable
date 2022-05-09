@@ -364,7 +364,11 @@ public class HashTable<K, V> implements Map<K, V> {
 
     @Override
     public boolean remove(Object key, Object value) {
-        return Map.super.remove(key, value);
+        if (key == null || value == null) throw new NullPointerException("Ключ или значение не могут быть null");
+        V current = get(key);
+        if (current == null || current != value) return false;
+        remove(key);
+        return true;
     }
 
     @Override
@@ -383,27 +387,81 @@ public class HashTable<K, V> implements Map<K, V> {
 
     @Override
     public V replace(K key, V value) {
-        return Map.super.replace(key, value);
+        if (key == null || value == null) throw new NullPointerException("Ключ или значение не могут быть null");
+        if (!keySet().contains(key)) return null;
+        return put(key, value);
     }
 
     @Override
     public V computeIfAbsent(K key, Function<? super K, ? extends V> mappingFunction) {
-        return Map.super.computeIfAbsent(key, mappingFunction);
+        if (key == null || mappingFunction == null)
+            throw new NullPointerException("Ключ или функция не может быть null");
+        Objects.requireNonNull(mappingFunction);
+        if (keySet().contains(key)) {
+            return get(key);
+        } else {
+            V newValue = mappingFunction.apply(key);
+            if (newValue == null) {
+                throw new NullPointerException("Новое значение не может быть null");
+            }
+            put(key, newValue);
+            return newValue;
+        }
     }
 
     @Override
     public V computeIfPresent(K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
-        return Map.super.computeIfPresent(key, remappingFunction);
+        if (key == null || remappingFunction == null)
+            throw new NullPointerException("Ключ или функция не может быть null");
+        Objects.requireNonNull(remappingFunction);
+        if (keySet().contains(key)) {
+            V newValue = remappingFunction.apply(key, get(key));
+            if (newValue == null) {
+                throw new NullPointerException("Новое значение не может быть null");
+            }
+            put(key, newValue);
+            return newValue;
+        }
+        return null;
     }
 
     @Override
     public V compute(K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
-        return Map.super.compute(key, remappingFunction);
+        if (key == null || remappingFunction == null)
+            throw new NullPointerException("Ключ или функция не может быть null");
+        V oldValue = get(key);
+        V newValue = remappingFunction.apply(key, oldValue);
+        if (oldValue != null) {
+            if (newValue != null) {
+                put(key, newValue);
+                return newValue;
+            } else {
+                remove(key);
+                return null;
+            }
+        } else {
+            return null;
+        }
     }
 
     @Override
     public V merge(K key, V value, BiFunction<? super V, ? super V, ? extends V> remappingFunction) {
-        return Map.super.merge(key, value, remappingFunction);
+        if (key == null || value == null || remappingFunction == null)
+            throw new NullPointerException("Ключ, значение или функция не может быть null");
+        Objects.requireNonNull(remappingFunction);
+        if (keySet().contains(key)) {
+            V newValue = remappingFunction.apply(get(key), value);
+            if (newValue != null) {
+                put(key, newValue);
+                return newValue;
+            } else {
+                remove(key);
+                return null;
+            }
+        } else {
+            put(key, value);
+            return value;
+        }
     }
 
     @Override

@@ -1,9 +1,7 @@
 import junit.framework.TestCase;
-import org.junit.Test;
-
 import static org.junit.jupiter.api.Assertions.*;
-
 import java.util.*;
+import java.util.function.Function;
 
 public class HashTableTest extends TestCase {
     HashTable<String, Integer> ht = new HashTable<>();
@@ -137,7 +135,7 @@ public class HashTableTest extends TestCase {
 
     public void testGetOrDefault() {
         fillTable(ht);
-        assertEquals( 10, (int)ht.getOrDefault("test1", 20));
+        assertEquals(10, (int) ht.getOrDefault("test1", 20));
         assertEquals(40, (int) ht.getOrDefault("test6", 40));
     }
 
@@ -151,7 +149,6 @@ public class HashTableTest extends TestCase {
             value += 1;
             ht.replace(key, value - 1, value);
         });
-        System.out.println(ht);
         assertEquals(expected, ht);
     }
 
@@ -180,24 +177,79 @@ public class HashTableTest extends TestCase {
         assertThrows(NullPointerException.class, () -> ht.putIfAbsent(null, null));
     }
 
-    public void testTestRemove() {
+    public void testBooleanRemove() {
+        fillTable(ht);
+        assertEquals(10, (int) ht.get("test1"));
+        assertFalse(ht.remove("test1", 15));
+        assertEquals(5, ht.size());
+        assertTrue(ht.remove("test1", 10));
+        assertEquals(4, ht.size());
     }
 
     public void testReplace() {
+        fillTable(ht);
+        assertEquals(10, (int) ht.get("test1"));
+        assertEquals(10, (int) ht.replace("test1", 15));
+        assertEquals(15, (int) ht.get("test1"));
+        assertThrows(NullPointerException.class, () -> ht.replace(null, 1));
+        assertThrows(NullPointerException.class, () -> ht.replace("test7", null));
+        assertThrows(NullPointerException.class, () -> ht.replace(null, null));
     }
 
-    public void testTestReplace() {
+    public void testBooleanReplace() {
+        fillTable(ht);
+        assertFalse(ht.replace("test1", 20, 10));
+        assertEquals(10, (int) ht.get("test1"));
+        assertTrue(ht.replace("test1", 10, 70));
+        assertEquals(70, (int) ht.get("test1"));
     }
 
     public void testComputeIfAbsent() {
+        fillTable(ht);
+        assertEquals(5, ht.size());
+        Function<String, Integer> convert = key -> 100;
+        assertEquals(10, (int) ht.computeIfAbsent("test1", convert));
+        assertEquals(5, ht.size());
+        assertEquals(100, (int) ht.computeIfAbsent("test7", convert));
+        assertEquals(6, ht.size());
+        assertTrue(ht.containsKey("test7"));
+        assertTrue(ht.containsValue(100));
+        assertThrows(NullPointerException.class, () -> ht.computeIfAbsent("test1", null));
+        assertThrows(NullPointerException.class, () -> ht.computeIfAbsent(null, convert));
+        assertThrows(NullPointerException.class, () -> ht.computeIfAbsent(null, null));
     }
 
     public void testComputeIfPresent() {
+        ht.put("test1", 10);
+        ht.put("test2", 20);
+        Integer newValue = ht.computeIfPresent("test1", (key, value) -> value + 90);
+        assertEquals(100, (int) newValue);
+        newValue = ht.computeIfPresent("test3", (key, value) -> value + 500);
+        assertNull(newValue);
+        assertThrows(NullPointerException.class, () -> ht.computeIfPresent("test1", null));
+        assertThrows(NullPointerException.class, () -> ht.computeIfPresent(null, (key, value) -> value + 1000));
+        assertThrows(NullPointerException.class, () -> ht.computeIfPresent(null, null));
     }
 
     public void testCompute() {
+        fillTable(ht);
+        assertNull(ht.compute("test7", (key, value) -> (value == null) ? 1 : value + 10));
+        assertEquals(10, (int) ht.get("test1"));
+        assertEquals(15, (int) ht.compute("test1", (key, value) -> value + 5));
+        assertEquals(15, (int) ht.get("test1"));
     }
 
     public void testMerge() {
+        ht.put("test1", 10);
+        ht.put("test2", 20);
+        assertEquals(10, (int) ht.get("test1"));
+        assertEquals(100, (int) ht.merge("test1", 10, (key, val) -> val + 90));
+        assertEquals(100, (int) ht.get("test1"));
+        assertNull(ht.merge("test2", 20, (key, val) -> null));
+        assertFalse(ht.containsKey("test2"));
+        assertEquals(20, (int) ht.merge("test23", 20, (key, val) -> val + 100));
+        assertThrows(NullPointerException.class, () -> ht.merge("test1", 100, null));
+        assertThrows(NullPointerException.class, () -> ht.merge(null, 100, (key, val) -> val + 100));
+        assertThrows(NullPointerException.class, () -> ht.merge("test1", null, (key, val) -> val + 100));
     }
 }
