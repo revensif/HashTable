@@ -93,8 +93,10 @@ public class HashTableTest extends TestCase {
     public void testClear() {
         fillTable(ht);
         assertEquals(5, ht.size());
+        assertEquals(10, (int) ht.get("test1"));
         ht.clear();
         assertEquals(0, ht.size());
+        assertNull(ht.get("test1"));
     }
 
     public void testKeySet() {

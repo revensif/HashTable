@@ -5,6 +5,7 @@ import java.util.function.Function;
 
 public class HashTable<K, V> implements Map<K, V> {
     private final int CONST = 17;
+    private final int default_capacity = 16;
     private int size = 0;
     private int capacity;  //Размерность таблицы
     private final float loadFactor;  //Коэффициент заполнения
@@ -162,9 +163,9 @@ public class HashTable<K, V> implements Map<K, V> {
 
     @Override
     public void clear() {
-        for (Item<K, V> item : data) {
-            item = null;
-        }
+        if (capacity < default_capacity) {
+            data = new Item[capacity];
+        } else data = new Item[default_capacity];
         size = 0;
     }
 
