@@ -500,7 +500,23 @@ public class HashTable<K, V> implements Map<K, V> {
 
     @Override
     public String toString() {
-        return Arrays.toString(data);
+        int max = size() - 1;
+        if (max == -1)
+            return "{}";
+        StringBuilder sb = new StringBuilder();
+        Iterator<Map.Entry<K, V>> it = entrySet().iterator();
+        sb.append('{');
+        for (int i = 0; ; i++) {
+            Map.Entry<K, V> e = it.next();
+            Object key = e.getKey();
+            V value = e.getValue();
+            sb.append(key == this ? "(this Map)" : key.toString());
+            sb.append('=');
+            sb.append(value == this ? "(this Map)" : value.toString());
+            if (i == max)
+                return sb.append('}').toString();
+            sb.append(", ");
+        }
     }
 
     public static class Item<K, V> implements Map.Entry<K, V> {
